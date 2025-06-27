@@ -1,0 +1,108 @@
+//======= Copyright � 1996-2007, Valve Corporation, All rights reserved. ======
+
+// STATIC: "DETAILTEXTURE"						"0..1"
+// STATIC: "VERTEXCOLOR"						"0..1"
+// STATIC: "DONT_GAMMA_CONVERT_VERTEX_COLOR"	"0..1"
+
+// DYNAMIC: "COMPRESSED_VERTS"			"0..1"
+// DYNAMIC: "SKINNING"					"0..1"
+
+// SKIP: (!$VERTEXCOLOR && $DONT_GAMMA_CONVERT_VERTEX_COLOR)
+
+#include "common_vs_fxc.h"
+
+const float4 cBaseTexCoordTransform[2]		:  register( SHADER_SPECIFIC_CONST_0 );
+
+#if DETAILTEXTURE
+const float4 cDetailTexCoordTransform[2]	:  register( SHADER_SPECIFIC_CONST_4 );
+#endif
+
+struct VS_INPUT
+{
+	// This is all of the stuff that we ever use.
+	float4 vPos				: POSITION;
+	float4 vBoneWeights		: BLENDWEIGHT;
+	float4 vBoneIndices		: BLENDINDICES;
+	float4 vNormal			: NORMAL;
+	float4 vColor			: COLOR0;
+	float3 vSpecular		: COLOR1;
+	// make these float2's and stick the [n n 0 1] in the dot math.
+	float4 vTexCoord0		: TEXCOORD0;
+	float4 vTexCoord1		: TEXCOORD1;
+	float4 vTexCoord2		: TEXCOORD2;
+	float4 vTexCoord3		: TEXCOORD3;
+
+	// Position and normal/tangent deltas
+	float3 vPosFlex			: POSITION1;
+	float3 vNormalFlex		: NORMAL1;
+#ifdef SHADER_MODEL_VS_3_0
+	float vVertexID			: POSITION2;
+#endif
+};
+
+struct VS_OUTPUT
+{
+    float4 projPos					: POSITION;			// Projection-space position	
+
+	#if DETAILTEXTURE
+		float4 TexCoord0			: TEXCOORD0;
+	#else
+		float2 TexCoord0			: TEXCOORD0;
+	#endif
+	
+	// Vertex Color
+	#if VERTEXCOLOR
+		float4 color				: COLOR0;
+	#endif
+};
+
+VS_OUTPUT main( const VS_INPUT v )
+{
+	VS_OUTPUT o = ( VS_OUTPUT )0;
+
+	float4 vPosition = v.vPos;
+	float3 vNormal = 0;
+
+	// Perform skinning
+	float3 worldNormal, worldPos;
+	SkinPositionAndNormal( 
+		SKINNING, 
+		vPosition, vNormal,
+		v.vBoneWeights, v.vBoneIndices,
+		worldPos, worldNormal );
+
+	// Transform into projection space
+	float4 vProjPos = mul( float4( worldPos, 1 ), cViewProj );
+	o.projPos = vProjPos;
+
+	/*
+	o.worldPos_ProjPosZ.xyz = worldPos.xyz;
+	*/
+
+#if VERTEXCOLOR
+	#if DONT_GAMMA_CONVERT_VERTEX_COLOR
+		o.color.rgb = v.vColor.rgb;
+	#else
+		o.color.rgb = GammaToLinear( v.vColor.rgb );
+	#endif
+
+	o.color.a = v.vColor.a;
+#endif
+
+	// Always.
+	float4 TexCoord = float4(v.vTexCoord0.xy, 1.0f, 1.0f);
+
+	o.TexCoord0.xy = TexCoord.xy;
+
+	o.TexCoord0.x = dot(TexCoord, cBaseTexCoordTransform[0]);
+	o.TexCoord0.y = dot(TexCoord, cBaseTexCoordTransform[1]);
+
+	#if DETAILTEXTURE
+		o.TexCoord0.z = dot(TexCoord, cDetailTexCoordTransform[0]);
+		o.TexCoord0.w = dot(TexCoord, cDetailTexCoordTransform[1]);
+	#endif
+
+	return o;
+}
+
+

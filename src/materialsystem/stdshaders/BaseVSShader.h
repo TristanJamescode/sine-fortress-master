@@ -335,6 +335,9 @@ private:
 	// Converts a color + alpha into a vector4
 	void ColorVarsToVector( int colorVar, int alphaVar, Vector4D &color );
 
+public:
+	// Changes I ported from LUX
+	bool IsDefined(const int& var);
 };
 
 FORCEINLINE void SetFlashLightColorFromState( FlashlightState_t const &state, IShaderDynamicAPI *pShaderAPI, int nPSRegister=28, bool bFlashlightNoLambert=false )

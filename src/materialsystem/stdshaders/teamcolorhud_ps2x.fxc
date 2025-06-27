@@ -1,0 +1,331 @@
+//====== Copyright � 1996-2007, Valve Corporation, All rights reserved. =======//
+//
+//=============================================================================//
+
+// STATIC: "DISTANCEALPHAMODE"			"0..14"
+// STATIC: "DETAILTEXTUREMODE"			"0..10"
+// STATIC: "BLENDTINTBYXALPHA"			 "0..1"
+// STATIC: "VERTEXRGB"					"0..1"
+// STATIC: "VERTEXA"					"0..1"
+// STATIC: "ALPHATEXTURE"				"0..1"
+
+#define SRGB_INPUT_ADAPTER 0
+#define WRITEWATERFOGTODESTALPHA 0
+#define WRITE_DEPTH_TO_DESTALPHA 0
+#define PIXELFOGTYPE 0
+// dead dyn: "WRITEWATERFOGTODESTALPHA"	"0..1"
+// dead stat: "DEPTHBLEND"				"0..1"
+// dead dyn: "WRITE_DEPTH_TO_DESTALPHA"	"0..1"
+// dead dyn: "PIXELFOGTYPE"				"0..2"
+
+// Consistent with previous Skips
+// Can still use Distance Alpha when sourcing from Detail Texture so account for that !!
+// SKIP: ($DISTANCEALPHAMODE >= 8 && ($DETAILTEXTUREMODE == 0 || $ALPHATEXTURE == 1))
+// SKIP: ($DISTANCEALPHAMODE != 0 && $WRITEWATERFOGTODESTALPHA == 1)
+// SKIP: ($DISTANCEALPHAMODE != 0 && $WRITE_DEPTH_TO_DESTALPHA == 1)
+
+// ShiroDkxtro2: Statics were remapped, make the Shader use the original Paths again !!
+
+// For the simple minded people, heres how I compressed this
+// 0  = None
+// 1  = OUTLINE
+// 2  = SOFT_MASK
+// 3  = OUTLINE + SOFT_MASK
+// 4  = OUTER_GLOW
+// 5  = OUTER_GLOW + OUTLINE
+// 6  = OUTER_GLOW + SOFT_MASK
+// 7  = OUTER_GLOW + OUTLINE + SOFT_MASK
+// 8+ = ^ + DISTANCEALPHAFROMDETAIL
+#if (DISTANCEALPHAMODE > 0)
+	// No longer need a static for this one :)
+	#define DISTANCEALPHA 1
+	
+	#if (DISTANCEALPHAMODE == 1)
+		#define OUTLINE 1
+		#define SOFT_MASK 0
+		#define OUTER_GLOW 0
+		#define DISTANCEALPHAFROMDETAIL 0
+	#elif (DISTANCEALPHAMODE == 2)
+		#define OUTLINE 0
+		#define SOFT_MASK 1
+		#define OUTER_GLOW 0
+		#define DISTANCEALPHAFROMDETAIL 0
+	#elif (DISTANCEALPHAMODE == 3)
+		#define OUTLINE 1
+		#define SOFT_MASK 1
+		#define OUTER_GLOW 0
+		#define DISTANCEALPHAFROMDETAIL 0
+	#elif (DISTANCEALPHAMODE == 4)
+		#define OUTLINE 0
+		#define SOFT_MASK 0
+		#define OUTER_GLOW 1
+		#define DISTANCEALPHAFROMDETAIL 0	
+	#elif (DISTANCEALPHAMODE == 5)
+		#define OUTLINE 1
+		#define SOFT_MASK 0
+		#define OUTER_GLOW 1
+		#define DISTANCEALPHAFROMDETAIL 0
+	#elif (DISTANCEALPHAMODE == 6)
+		#define OUTLINE 0
+		#define SOFT_MASK 1
+		#define OUTER_GLOW 1
+		#define DISTANCEALPHAFROMDETAIL 0	
+	#elif (DISTANCEALPHAMODE == 7)
+		#define OUTLINE 1
+		#define SOFT_MASK 1
+		#define OUTER_GLOW 1
+		#define DISTANCEALPHAFROMDETAIL 0
+	#elif (DISTANCEALPHAMODE == 8)
+		#define OUTLINE 1
+		#define SOFT_MASK 0
+		#define OUTER_GLOW 0
+		#define DISTANCEALPHAFROMDETAIL 1
+	#elif (DISTANCEALPHAMODE == 9)
+		#define OUTLINE 0
+		#define SOFT_MASK 1
+		#define OUTER_GLOW 0
+		#define DISTANCEALPHAFROMDETAIL 1
+	#elif (DISTANCEALPHAMODE == 10)
+		#define OUTLINE 1
+		#define SOFT_MASK 1
+		#define OUTER_GLOW 0
+		#define DISTANCEALPHAFROMDETAIL 1
+	#elif (DISTANCEALPHAMODE == 11)
+		#define OUTLINE 0
+		#define SOFT_MASK 0
+		#define OUTER_GLOW 1
+		#define DISTANCEALPHAFROMDETAIL 1	
+	#elif (DISTANCEALPHAMODE == 12)
+		#define OUTLINE 1
+		#define SOFT_MASK 0
+		#define OUTER_GLOW 1
+		#define DISTANCEALPHAFROMDETAIL 1
+	#elif (DISTANCEALPHAMODE == 13)
+		#define OUTLINE 0
+		#define SOFT_MASK 1
+		#define OUTER_GLOW 1
+		#define DISTANCEALPHAFROMDETAIL 1	
+	#elif (DISTANCEALPHAMODE == 14)
+		#define OUTLINE 1
+		#define SOFT_MASK 1
+		#define OUTER_GLOW 1
+		#define DISTANCEALPHAFROMDETAIL 1												
+	#endif
+#else
+	#define DISTANCEALPHA 0
+	#define OUTLINE 0
+	#define SOFT_MASK 0
+	#define OUTER_GLOW 0
+	#define DISTANCEALPHAFROMDETAIL 0
+#endif
+
+#if (DETAILTEXTUREMODE > 0)
+	#define DETAILTEXTURE 1
+	// Huh, I wonder whats faster.. This or big elif chain..
+	#define DETAIL_BLEND_MODE (DETAILTEXTUREMODE - 1)
+#else
+	#define DETAILTEXTURE 0
+	#define DETAIL_BLEND_MODE 0
+#endif
+
+// Defining this in case its used somewhere..
+#define LIGHTING_PREVIEW 0
+
+// Actual Shader begins here..!
+#include "common_vertexlitgeneric_dx9.h"
+ 
+
+const float4 g_DiffuseModulation	: register(c0);
+const float4 g_DetailTintAndFactor	: register(c2);
+#define g_DetailTint				g_DetailTintAndFactor.xyz
+#define g_DetailBlendFactor			g_DetailTintAndFactor.w
+
+sampler BaseTextureSampler		: register( s0 );
+sampler DetailSampler			: register( s1 );
+sampler AlphaSampler			: register( s2 );
+
+struct PS_INPUT
+{
+	#if DETAILTEXTURE
+		float4 TexCoord0 : TEXCOORD0;
+	#else
+		float2 TexCoord0 : TEXCOORD0;
+	#endif
+
+	#if (VERTEXRGB || VERTEXA)
+		float4 vColor					: COLOR0;
+	#endif
+};
+
+const float4 g_GlowParameters : register( c5 );
+const float4 g_GlowColor : register( c6 );
+#define GLOW_UV_OFFSET g_GlowParameters.xy
+#define OUTER_GLOW_MIN_DVALUE g_GlowParameters.z
+#define OUTER_GLOW_MAX_DVALUE g_GlowParameters.w
+#define OUTER_GLOW_COLOR g_GlowColor
+
+const float4 g_DistanceAlphaParams : register( c7 );
+#define SOFT_MASK_MAX g_DistanceAlphaParams.x
+#define SOFT_MASK_MIN g_DistanceAlphaParams.y
+
+const float4 g_OutlineColor : register( c8 );
+#define OUTLINE_COLOR g_OutlineColor
+
+const float4 g_OutlineParams : register( c9 );
+// these are ordered this way for optimal ps20 swizzling
+#define OUTLINE_MIN_VALUE0 g_OutlineParams.x
+#define OUTLINE_MAX_VALUE1 g_OutlineParams.y
+#define OUTLINE_MAX_VALUE0 g_OutlineParams.z
+#define OUTLINE_MIN_VALUE1 g_OutlineParams.w
+
+// Lighting Preview is a dead feature
+/*
+#if LIGHTING_PREVIEW == 2
+LPREVIEW_PS_OUT main( PS_INPUT i ) : COLOR
+#else
+float4 main( PS_INPUT i ) : COLOR
+#endif
+*/
+
+float4 main( PS_INPUT i ) : COLOR
+{
+	float4 f4BaseTexture = tex2D(BaseTextureSampler, i.TexCoord0.xy);
+
+	#if SRGB_INPUT_ADAPTER
+		f4BaseTexture.rgb = GammaToLinear( f4BaseTexture.rgb );
+	#endif
+
+#if ALPHATEXTURE
+	// Red Channel ( First Channel ) of the $AlphaTexture
+	float4 AlphaTexture = tex2D(AlphaSampler, i.TexCoord0.xy);
+	float f1FinalAlpha = AlphaTexture.r;
+	float f1DistAlphaMask = AlphaTexture.r;
+
+#elif (DISTANCEALPHA && !DISTANCEALPHAFROMDETAIL)
+	float f1DistAlphaMask = f4BaseTexture.a;
+#endif
+
+#if DETAILTEXTURE
+	float4 f4DetailTexture = tex2D(DetailSampler, i.TexCoord0.zw);
+	f4DetailTexture.rgb *= g_DetailTint;
+	
+	#if (DISTANCEALPHA && DISTANCEALPHAFROMDETAIL)
+		float f1DistAlphaMask = f4DetailTexture.a;
+		f4DetailTexture.a = 1.0; // make tcombine treat as 1.0
+	#endif
+
+	f4BaseTexture = TextureCombine( f4BaseTexture, f4DetailTexture, DETAIL_BLEND_MODE, g_DetailBlendFactor );
+#endif
+
+#if DISTANCEALPHA
+	// now, do all distance alpha effects
+	//if ( OUTLINE && ( f1DistAlphaMask >= OUTLINE_MIN_VALUE0 ) && ( f1DistAlphaMask <= OUTLINE_MAX_VALUE1 ) )
+	//{
+	//	float oFactor=1.0;
+	//	if ( f1DistAlphaMask <= OUTLINE_MIN_VALUE1 )
+	//	{
+	//		oFactor=smoothstep( OUTLINE_MIN_VALUE0, OUTLINE_MIN_VALUE1, f1DistAlphaMask );
+	//	}
+	//	else
+	//	{
+	//		oFactor=smoothstep( OUTLINE_MAX_VALUE1, OUTLINE_MAX_VALUE0, f1DistAlphaMask );
+	//	}
+	//	f4BaseTexture = lerp( f4BaseTexture, OUTLINE_COLOR, oFactor );
+	//}
+	#if OUTLINE
+		float4 oFactors = smoothstep(g_OutlineParams.xyzw, g_OutlineParams.wzyx, f1DistAlphaMask );
+		f4BaseTexture = lerp( f4BaseTexture, g_OutlineColor, oFactors.x * oFactors.y );
+	#endif
+
+	float mskUsed;
+	#if SOFT_MASK
+		mskUsed = smoothstep( SOFT_MASK_MIN, SOFT_MASK_MAX, f1DistAlphaMask );
+
+		#if ALPHATEXTURE
+			f1FinalAlpha = mskUsed;
+		#else
+			f4BaseTexture.a *= mskUsed;
+		#endif
+	#else
+		mskUsed = f1DistAlphaMask >= 0.5;
+
+		#if ALPHATEXTURE
+			f1FinalAlpha = mskUsed;
+		#elif DETAILTEXTURE
+			f4BaseTexture.a *= mskUsed;
+		#else
+			f4BaseTexture.a = mskUsed;
+		#endif
+	#endif
+	
+	#if OUTER_GLOW
+		#if DISTANCEALPHAFROMDETAIL
+			float4 glowTexel = tex2D( DetailSampler, i.TexCoord0.zw + GLOW_UV_OFFSET );
+		#else
+			float4 glowTexel = tex2D( BaseTextureSampler, i.TexCoord0.xy + GLOW_UV_OFFSET );
+		#endif
+		
+		float4 glowc = OUTER_GLOW_COLOR*smoothstep( OUTER_GLOW_MIN_DVALUE, OUTER_GLOW_MAX_DVALUE, glowTexel.a );
+		f4BaseTexture = lerp( glowc, f4BaseTexture, mskUsed );
+	#endif
+#endif  // DISTANCEALPHA
+
+	// Finally, BTBBA	
+	#if BLENDTINTBYXALPHA
+		float3 tintedColor = f4BaseTexture.rgb * g_DiffuseModulation.rgb;
+		tintedColor = lerp(tintedColor, g_DiffuseModulation.rgb, g_DiffuseModulation.w);
+		f4BaseTexture.rgb = lerp(f4BaseTexture.rgb, tintedColor, f4BaseTexture.a);
+	#else
+		f4BaseTexture.rgb *= g_DiffuseModulation.rgb;
+	#endif
+
+	#if !ALPHATEXTURE
+		float f1FinalAlpha = f4BaseTexture.a;
+	#endif
+
+	// Nope
+//	f1FinalAlpha *= g_DiffuseModulation.w;
+
+	#if VERTEXRGB
+		f4BaseTexture.rgb *= i.vColor.rgb;
+	#endif
+
+	#if VERTEXA
+		f1FinalAlpha *= i.vColor.a;
+	#endif
+
+// Dead Feature
+/*
+#if LIGHTING_PREVIEW
+	#if LIGHTING_PREVIEW == 1
+		float dotprod=0.7+0.25*dot(i.worldSpaceNormal,normalize(float3(1,2,-.5)));
+		return FinalOutput( float4( dotprod*albedo.xyz, alpha ), 0, PIXEL_FOG_TYPE_NONE, TONEMAP_SCALE_LINEAR );
+	#else
+		LPREVIEW_PS_OUT ret;
+		ret.flags=float4(1,1,1,1);
+		ret.color=float4( albedo.xyz, alpha );
+		ret.normal=float4(i.worldSpaceNormal,alpha);
+		ret.position=float4(i.worldPos_projPosZ.xyz, alpha);
+		return FinalOutput( ret, 0, PIXEL_FOG_TYPE_NONE, TONEMAP_SCALE_NONE );
+	#endif
+#else
+*/
+
+	// Might want to revive this..
+	/*
+	#if DEPTHBLEND
+		float2 vScreenPos;
+		vScreenPos.x = i.projPos.x;
+		vScreenPos.y = -i.projPos.y;
+		vScreenPos = (vScreenPos + i.projPos.w) * 0.5f;	
+		alpha *= DepthFeathering( DepthSampler, vScreenPos / i.projPos.w, i.projPos.w - i.projPos.z, i.projPos.w, g_DepthFeatheringConstants );
+	#endif
+	*/
+	
+	// Output! Yayyy!
+	float4 f4Result = float4(f4BaseTexture.rgb, f1FinalAlpha);
+	return FinalOutput(f4Result, 0.0f, PIXELFOGTYPE, TONEMAP_SCALE_LINEAR, WRITE_DEPTH_TO_DESTALPHA, 0.0f );
+	
+// #endif // !LIGHTING_PREVIEW
+}
+

@@ -2247,3 +2247,8 @@ void CBaseVSShader::DrawEqualDepthToDestAlpha( void )
 	Assert( 0 ); //probably just needs a shader update to the latest
 #endif
 }
+
+bool CBaseVSShader::IsDefined(const int& var)
+{
+	return s_ppParams[var]->IsDefined();
+}
