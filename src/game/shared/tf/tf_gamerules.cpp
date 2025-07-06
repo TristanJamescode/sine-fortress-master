@@ -1997,7 +1997,7 @@ void CTFGameRulesProxy::Activate()
 	}
 	if (m_bCustomRedName)
 	{
-		redName = STRING(m_iszBlueTeamName);
+		redName = STRING(m_iszRedTeamName);
 	}
 
 	TFGameRules()->SetBlueTeamHasCustomName(m_bCustomBlueName);
