@@ -86,13 +86,15 @@ static void *Launcher_GetProcAddress( void *pHandle, const char *pszName )
 #define MessageBox( x, text, title, y) SDL_ShowSimpleMessageBox( SDL_MESSAGEBOX_ERROR, title, text, NULL )
 #endif
 
-static const AppId_t k_unSDK2013MPAppId = 3759200;
+static const AppId_t k_unSDK2013MPAppId = 243750;
 
-#ifdef MOD_LAUNCHER
+/*#ifdef MOD_LAUNCHER
 static const AppId_t k_unMyModAppid = MOD_APPID;
 #else
 static const AppId_t k_unMyModAppid = k_unSDK2013MPAppId;
-#endif
+#endif	*/
+
+static const AppId_t k_unMyModAppid = 3759200;
 
 static bool s_bInittedSteam = false;
 
@@ -448,15 +450,15 @@ int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 	// Get the root directory the .exe is in
 	char* pRootDir = GetBaseDir( moduleName );
 	const char *pBinaryGameDir = pRootDir;
-	char szGameInstallDir[4096];
+	/*	char szGameInstallDir[4096];
 	if ( !GetGameInstallDir( pRootDir, szGameInstallDir, 4096 ) )
 	{
 		return 1;
 	}
 
-	pBinaryGameDir = szGameInstallDir;
+	pBinaryGameDir = szGameInstallDir;	
 
-	SetEnvironmentVariableA( "SDK_EXEC_DIR", szGameInstallDir );
+	SetEnvironmentVariableA( "SDK_EXEC_DIR", szGameInstallDir ); */ // Commented out so it stops checking for SDK Base 2013
 
 #define LAUNCHER_DLL_PATH	"%s\\" PLATFORM_BIN_DIR "\\launcher.dll"
 #define LAUNCHER_PATH		"%s\\" PLATFORM_BIN_DIR
