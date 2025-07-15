@@ -25,6 +25,8 @@ ipch
 *.mak.vpc_crc
 *.xcodeproj/
 obj*/
+src/.ninja*
+src/compile_commands.json
 !devtools/*.mak
 !utils/smdlexp/smdlexp.mak
 
