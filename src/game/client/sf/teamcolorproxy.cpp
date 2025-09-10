@@ -40,7 +40,18 @@ public:
 
 protected:
 	virtual int			GetDisplayTeamNum(void* pC_BaseEntity);
+};
 
+class CEntityTeamColorProxyRed : public CEntityTeamColorProxy
+{
+protected:
+	virtual int			GetDisplayTeamNum(void* pC_BaseEntity){return TF_TEAM_RED;}
+};
+
+class CEntityTeamColorProxyBlue : public CEntityTeamColorProxy
+{
+protected:
+	virtual int			GetDisplayTeamNum(void* pC_BaseEntity){return TF_TEAM_BLUE;}
 };
 
 //-----------------------------------------------------------------------------
@@ -126,7 +137,7 @@ void CEntityTeamColorProxy::OnBind(void* pC_BaseEntity)
 {
 	int iTeamNum = GetDisplayTeamNum(pC_BaseEntity);
 
-	if (iTeamNum == -1)
+	if (iTeamNum == TEAM_INVALID)
 	{
 		Warning("OnBind Failed from a wrong team number %i\n", iTeamNum);
 		return;
@@ -137,17 +148,19 @@ void CEntityTeamColorProxy::OnBind(void* pC_BaseEntity)
 	switch (iTeamNum)
 	{
 	case TF_TEAM_RED:
-			if (!TFGameRules()) break;
+		if (!TFGameRules())
+			break;
 		color = TFGameRules()->GetRedTeamColor();
 		break;
 
 	case TF_TEAM_BLUE:
-			if (!TFGameRules()) break;
+		if (!TFGameRules())
+			break;
 		color = TFGameRules()->GetBlueTeamColor();
 		break;
 
 	case TEAM_UNASSIGNED:
-		default:
+	default:
 		int r, g, b;
 		r = g = b = 0;
 
@@ -156,11 +169,11 @@ void CEntityTeamColorProxy::OnBind(void* pC_BaseEntity)
 
 		if (scanned != 3)
 		{
-				color = Vector(0, 0, 0);
+			color = Vector(0, 0, 0);
 			break;
 		}
 
-			color = Vector(r, g, b);
+		color = Vector(r, g, b);
 		break;
 	}
 
@@ -173,3 +186,5 @@ void CEntityTeamColorProxy::OnBind(void* pC_BaseEntity)
 }
 
 EXPOSE_INTERFACE(CEntityTeamColorProxy, IMaterialProxy, "TeamColor" IMATERIAL_PROXY_INTERFACE_VERSION);
+EXPOSE_INTERFACE(CEntityTeamColorProxyRed, IMaterialProxy, "TeamColorRed" IMATERIAL_PROXY_INTERFACE_VERSION);
+EXPOSE_INTERFACE(CEntityTeamColorProxyBlue, IMaterialProxy, "TeamColorBlue" IMATERIAL_PROXY_INTERFACE_VERSION);
