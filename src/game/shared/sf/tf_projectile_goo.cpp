@@ -216,8 +216,8 @@ void CTFProjectile_Goo::VPhysicsCollision(int index, gamevcollisionevent_t* pEve
 		// Expand into a puddle
 		if (m_nGooType == TF_GOO_TOXIC)
 			Detonate();
-		else
-			Expand();
+			
+		Expand();
 	}
 
 	//QAngle vecAngNorm;
@@ -463,8 +463,6 @@ void CTFProjectile_Goo::Explode(trace_t* pTrace, int bitsDamageType)
 		DrawRadius(flRadius);
 	}*/
 #endif
-
-	Expand();
 }
 
 //-----------------------------------------------------------------------------
