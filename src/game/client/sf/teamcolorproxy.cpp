@@ -86,7 +86,7 @@ bool CEntityTeamColorProxy::Init(IMaterial* pMaterial, KeyValues* pKeyValues)
 
 int CEntityTeamColorProxy::GetDisplayTeamNum(void* pC_BaseEntity)
 {
-	int iTeamNum = -1;
+	int iTeamNum = TEAM_INVALID;
 
 	C_BaseEntity* pEnt = BindArgToEntity(pC_BaseEntity);
 
