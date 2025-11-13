@@ -150,13 +150,23 @@ void CEntityTeamColorProxy::OnBind(void* pC_BaseEntity)
 	case TF_TEAM_RED:
 		if (!TFGameRules())
 			break;
-		color = TFGameRules()->GetRedTeamColor();
+
+		if (TFGameRules()->GetRedTeamHasCustomColor())
+			color = TFGameRules()->GetRedTeamColor();
+		else
+			color = SF_COLOR_RED_VEC;
+
 		break;
 
 	case TF_TEAM_BLUE:
 		if (!TFGameRules())
 			break;
-		color = TFGameRules()->GetBlueTeamColor();
+
+		if (TFGameRules()->GetBlueTeamHasCustomColor())
+			color = TFGameRules()->GetBlueTeamColor();
+		else
+			color = SF_COLOR_BLUE_VEC;
+
 		break;
 
 	case TEAM_UNASSIGNED:

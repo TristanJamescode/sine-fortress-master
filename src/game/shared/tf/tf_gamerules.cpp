@@ -1969,8 +1969,8 @@ void CTFGameRulesProxy::Activate()
 
 	ListenForGameEvent( "teamplay_round_win" );
 
-	Vector blueColor = Vector(97, 145, 200);
-	Vector redColor = Vector(230, 85, 85);
+	Vector blueColor = SF_COLOR_BLUE_VEC;
+	Vector redColor = SF_COLOR_RED_VEC;
 	if (m_bCustomBlueColor)
 	{
 		blueColor.x = m_rgbBlueColor.r;
