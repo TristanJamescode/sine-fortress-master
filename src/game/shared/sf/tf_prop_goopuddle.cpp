@@ -85,8 +85,8 @@ void CTFPropGooPuddle::Precache()
 
 void CTFPropGooPuddle::RecalculateBounds()
 {
-	Vector m_minBounds = Vector(64.9f, 64.9f, 64.9f);
-	Vector m_maxBounds = Vector(-64.9f, -64.9f, -64.9f);
+	Vector m_minBounds = Vector(-64.9f, -64.9f, -64.9f);
+	Vector m_maxBounds = Vector(64.9f, 64.9f, 64.9f);
 
 	for (int i = 0; i < m_PuddleCount; ++i)
 	{
