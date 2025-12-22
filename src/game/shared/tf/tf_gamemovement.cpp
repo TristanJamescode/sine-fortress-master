@@ -146,7 +146,6 @@ public:
 
 	virtual void HandleDuckingSpeedCrop( void );
 
-	bool m_bJumpGooLaunch = false; //check for if player jumped from jump goo (for sound later)
 protected:
 
 	virtual void CheckWaterJump( void );
@@ -1170,12 +1169,9 @@ void CTFGameMovement::PlayerLandGoo(CTFPlayer* player) {
 		return;
 	player->EmitSound("Weapon_RocketPack.Land"); //landing sound after getting on the jump goo.
 
-	//if (player->m_Shared.InCond(TF_COND_JUMP_GOO))
-	//{
-	//	player->EmitSound("Weapon_RocketPack.Land"); //landing sound after getting on the jump goo.
-	//	//player->m_Shared.RemoveCond(TF_COND_JUMP_GOO);
-	//}
-
+#ifdef GAME_DL
+	m_pTFPlayer->EnableNextFallDamage();
+#endif // GAME_DL
 }
 
 //-----------------------------------------------------------------------------
@@ -1335,11 +1331,11 @@ bool CTFGameMovement::CheckJumpButton()
 	{
 #ifdef GAME_DLL
 		//m_pTFPlayer->EmitSound("Weapon_RocketPack.Land"); //landing sound after getting on the jump goo.
-		if (sf_goo_falldamage_forgiveness.GetBool())
+		if (sf_goo_falldamage_forgiveness.GetBool()) 
 			m_pTFPlayer->DisableNextFallDamage();
 		
+		
 #endif
-		m_bJumpGooLaunch = true;
 		flJumpMod += sf_goojump_multi.GetFloat();
 		mv->m_vecVelocity[0] *= sf_goojump_speed.GetFloat();
 		mv->m_vecVelocity[1] *= sf_goojump_speed.GetFloat();
@@ -2614,11 +2610,6 @@ void CTFGameMovement::CheckFalling( void )
 	}
 
 	BaseClass::CheckFalling();
-
-#ifdef GAME_DLL
-	if (player->GetGroundEntity() != NULL && !IsDead())
-		m_pTFPlayer->EnableNextFallDamage();
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -2987,14 +2978,14 @@ void CTFGameMovement::SetGroundEntity( trace_t *pm )
 		m_pTFPlayer->EmitSound( "BumperCar.JumpLand" );
 	}
 
-	if(m_bJumpGooLaunch && !m_pTFPlayer->GetGroundEntity() && pm && pm->m_pEnt)
-	{
 #ifdef GAME_DLL
+
+	if(m_pTFPlayer->IsFallDamageDisabled() && !m_pTFPlayer->GetGroundEntity() && pm && pm->m_pEnt)
+	{
 		PlayerLandGoo(m_pTFPlayer);
-#endif
-		m_pTFPlayer->EmitSound("Weapon_RocketPack.Land"); //landing sound after getting on the jump goo.
-		m_bJumpGooLaunch = false;
 	}
+
+#endif // GAME_DLL 
 
 	BaseClass::SetGroundEntity( pm );
 	if ( pm && pm->m_pEnt )
