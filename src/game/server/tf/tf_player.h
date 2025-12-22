@@ -1102,6 +1102,7 @@ public:
 	// Sine Fortress
 	void				DisableNextFallDamage(void) { m_bDisableNextFallDamage = true; }
 	void				EnableNextFallDamage(void) { m_bDisableNextFallDamage = false; }
+	const bool			IsFallDamageDisabled(void) { return m_bDisableNextFallDamage; }
 
 protected:
 
