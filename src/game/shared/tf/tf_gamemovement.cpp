@@ -1336,7 +1336,6 @@ bool CTFGameMovement::CheckJumpButton()
 		
 		
 #endif
-		//m_bJumpGooLaunch = true;
 		flJumpMod += sf_goojump_multi.GetFloat();
 		mv->m_vecVelocity[0] *= sf_goojump_speed.GetFloat();
 		mv->m_vecVelocity[1] *= sf_goojump_speed.GetFloat();
