@@ -118,6 +118,10 @@ void CTFGooGun::PrimaryAttack( void )
 
 void CTFGooGun::SecondaryAttack( void )
 {
+
+	if (!CanAttack())
+		return;
+
 	// Check for ammunition.
 	CBaseCombatCharacter* pOwner = GetOwner();
 	if (!pOwner)
